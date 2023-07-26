@@ -1,3 +1,10 @@
+How to run this project?
+
+Simply run:
+
+``` bash
+docker compose up
+```
 
 Use the following curl command to delete the docs from the nginx index
 
