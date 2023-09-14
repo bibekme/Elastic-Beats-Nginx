@@ -12,7 +12,7 @@ services:
   nginx:
     image: nginx:latest
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/logs:/var/log/nginx
@@ -40,14 +40,15 @@ services:
     networks:
       - elastic
   logstash:
-    image: logstash:7.16.1
+    image: logstash:8.2.2
     container_name: log
     environment:
       discovery.seed_hosts: logstash
       LS_JAVA_OPTS: "-Xms512m -Xmx512m"
     volumes:
-      - ./logstash/pipeline/logstash-nginx.config:/usr/share/logstash/pipeline/logstash-nginx.config
+      - ./logstash/pipeline/:/usr/share/logstash/pipeline/
       - ./nginx/logs/access.log:/home/nginx.log
+      - ./remote-path:/var/log
     ports:
       - "5000:5000/tcp"
       - "5000:5000/udp"
@@ -57,7 +58,7 @@ services:
       - elasticsearch
     networks:
       - elastic
-    command: logstash -f /usr/share/logstash/pipeline/logstash-nginx.config
+    # command: logstash -f /usr/share/logstash/pipeline/logstash-nginx.config
   kibana:
     image: kibana:7.16.1
     container_name: kib
@@ -69,4 +70,3 @@ services:
       - elastic
 networks:
   elastic:
-    driver: bridge
