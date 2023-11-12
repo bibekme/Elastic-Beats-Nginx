@@ -8,7 +8,6 @@ services:
       - "8000:8000"
     depends_on:
       - nginx
-
   nginx:
     image: nginx:latest
     ports:
@@ -18,7 +17,6 @@ services:
       - ./nginx/logs:/var/log/nginx
     container_name: nginx
     restart: always
-
   elasticsearch:
     image: elasticsearch:${ELK_VERSION}
     container_name: elasticsearch
@@ -34,7 +32,6 @@ services:
       - elastic
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
-
   kibana:
     image: kibana:${ELK_VERSION}
     container_name: kibana
@@ -45,7 +42,6 @@ services:
       - elastic
     depends_on:
       - elasticsearch
-
   logstash:
     image: logstash:${ELK_VERSION}
     container_name: logstash
@@ -61,7 +57,6 @@ services:
       - ./logstash-config:/usr/share/logstash/pipeline
     depends_on:
       - elasticsearch
-
   filebeat:
     image: docker.elastic.co/beats/filebeat:${ELK_VERSION}
     container_name: filebeat
@@ -75,11 +70,9 @@ services:
       - elastic
     depends_on:
       - logstash
-
 networks:
   elastic:
     driver: bridge
-
 volumes:
   elasticsearch-data:
     driver: local
