@@ -1,22 +1,26 @@
-version: "3"
+version: "2"
 services:
   app:
-    build: ./app
+    build:
+      context: ./app
+      dockerfile: Dockerfile
     container_name: app
     command: python manage.py runserver 0.0.0.0:8000
     ports:
       - "8000:8000"
-    depends_on:
-      - nginx
+
   nginx:
-    image: nginx:latest
+    image: nginx
+    container_name: nginx
     ports:
       - "80:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/logs:/var/log/nginx
-    container_name: nginx
+    depends_on:
+      - app
     restart: always
+
   elasticsearch:
     image: elasticsearch:${ELK_VERSION}
     container_name: elasticsearch
@@ -28,51 +32,39 @@ services:
     ports:
       - 9200:9200
       - 9300:9300
-    networks:
-      - elastic
     volumes:
-      - elasticsearch-data:/usr/share/elasticsearch/data
+      - esdata:/usr/share/elasticsearch/data
+
   kibana:
     image: kibana:${ELK_VERSION}
     container_name: kibana
     env_file: .env
     ports:
       - 5601:5601
-    networks:
-      - elastic
     depends_on:
       - elasticsearch
-  logstash:
-    image: logstash:${ELK_VERSION}
-    container_name: logstash
-    env_file: .env
-    ports:
-      - "5000:5000/tcp"
-      - "5000:5000/udp"
-      - "5044:5044"
-      - "9600:9600"
-    networks:
-      - elastic
-    volumes:
-      - ./logstash-config:/usr/share/logstash/pipeline
-    depends_on:
-      - elasticsearch
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
   filebeat:
     image: docker.elastic.co/beats/filebeat:${ELK_VERSION}
     container_name: filebeat
     env_file: .env
     user: root
-    command: ["filebeat", "-e", "--strict.perms=false"]
     volumes:
-      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
-      - ./nginx/logs:/nginx-logs
-    networks:
-      - elastic
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./nginx/logs:/var/log/nginx
     depends_on:
-      - logstash
-networks:
-  elastic:
-    driver: bridge
+      kibana:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
 volumes:
-  elasticsearch-data:
-    driver: local
+  esdata:
