@@ -34,7 +34,19 @@ services:
       - 9300:9300
     volumes:
       - esdata:/usr/share/elasticsearch/data
-
+    healthcheck:
+      test:
+         [
+          "CMD-SHELL",
+          "curl -s -X GET http://localhost:9200/_cluster/health?pretty | grep status | grep -q '\\(green\\|yellow\\)'"
+        ]
+        interval: 10s
+        timeout: 10s
+        retries: 24
+        interval: 10s
+        timeout: 10s
+        retries: 120
+      
   kibana:
     image: kibana:${ELK_VERSION}
     container_name: kibana
